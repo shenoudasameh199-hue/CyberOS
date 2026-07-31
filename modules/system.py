@@ -5,96 +5,87 @@ from rich.table import Table
 
 console = Console()
 
-def get_cpu_percent():
-    try:
-        return f"{psutil.cpu_percent(interval=1)}%"
-    except (PermissionError, Exception):
-        return "N/A (Android Restricted)"
+def get_system_info():
+    table = Table(title="💻 System Specifications", show_header=True, header_style="bold magenta")
+    table.add_column("Metric", style="bold cyan")
+    table.add_column("Details", style="bold green")
 
-def get_system_info() -> None:
-    uname = platform.uname()
-    
+    table.add_row("OS / Kernel", f"{platform.system()} {platform.release()}")
+    table.add_row("Hostname", platform.node())
+    table.add_row("Architecture", platform.machine())
+
+    # CPU Usage with Fallback for Android restriction
     try:
-        mem = psutil.virtual_memory()
-        ram_info = f"{mem.percent}% ({mem.used // (1024**2)}MB / {mem.total // (1024**2)}MB)"
+        cpu = f"{psutil.cpu_percent(interval=1)}%"
+    except Exception:
+        cpu = "N/A (Android Restricted)"
+    table.add_row("CPU Usage", cpu)
+
+    # Memory Usage
+    try:
+        ram = psutil.virtual_memory()
+        ram_info = f"{ram.percent}% ({ram.used // (1024**2)}MB / {ram.total // (1024**2)}MB)"
     except Exception:
         ram_info = "N/A"
+    table.add_row("RAM Usage", ram_info)
 
+    # Disk Usage
     try:
         disk = psutil.disk_usage('/')
         disk_info = f"{disk.percent}% ({disk.used // (1024**3)}GB / {disk.total // (1024**3)}GB)"
     except Exception:
         disk_info = "N/A"
-
-    table = Table(title="💻 معلومات النظام الأساسية", style="cyan")
-    table.add_column("المعيار", style="bold yellow")
-    table.add_column("التفاصيل", style="bold white")
-
-    table.add_row("نظام التشغيل", f"{uname.system} {uname.release}")
-    table.add_row("اسم الجهاز", uname.node)
-    table.add_row("المعالج (Arch)", uname.machine)
-    table.add_row("استهلاك المعالج", get_cpu_percent())
-    table.add_row("الذاكرة (RAM)", ram_info)
-    table.add_row("المساحة (Disk)", disk_info)
+    table.add_row("Disk Usage", disk_info)
 
     console.print(table)
 
-def get_running_processes(limit: int = 10) -> None:
-    table = Table(title=f"⚙️ أعلى {limit} عمليات استهلاكاً للذاكرة", style="green")
-    table.add_column("PID", style="yellow")
-    table.add_column("اسم العملية", style="bold white")
-    table.add_column("استهلاك RAM (%)", style="magenta")
+def get_running_processes():
+    table = Table(title="⚙️ Top Processes", show_header=True, header_style="bold yellow")
+    table.add_column("PID", style="cyan", justify="center")
+    table.add_column("Name", style="bold white")
+    table.add_column("CPU %", style="bold green", justify="center")
+    table.add_column("RAM %", style="bold magenta", justify="center")
 
-    procs = []
     try:
-        for p in psutil.process_iter(['pid', 'name', 'memory_percent']):
+        procs = []
+        for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
             try:
                 procs.append(p.info)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, PermissionError):
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
-    except PermissionError:
-        console.print("[bold yellow]⚠️ عرض العمليات يتطلب صلاحيات Root على Android.[/bold yellow]")
-        return
+        
+        # Sort by CPU usage
+        sorted_procs = sorted(procs, key=lambda x: x['cpu_percent'] or 0, reverse=True)[:10]
+        for p in sorted_procs:
+            cpu = f"{p['cpu_percent']:.1f}%" if p['cpu_percent'] else "0.0%"
+            mem = f"{p['memory_percent']:.1f}%" if p['memory_percent'] else "0.0%"
+            table.add_row(str(p['pid']), str(p['name']), cpu, mem)
+            
+        console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Error reading process table: {e}[/bold red]")
 
-    if not procs:
-        console.print("[bold yellow]⚠️ لا توجد صلاحيات لعرض العمليات الحالية.[/bold yellow]")
-        return
-
-    sorted_procs = sorted(procs, key=lambda x: (x.get('memory_percent') or 0), reverse=True)[:limit]
-    for p in sorted_procs:
-        mem = f"{p['memory_percent']:.2f}%" if p.get('memory_percent') is not None else "0.0%"
-        table.add_row(str(p['pid']), str(p['name']), mem)
-
-    console.print(table)
-
-def get_disk_usage() -> None:
-    table = Table(title="📁 أقسام التخزين المتاحة", style="magenta")
-    table.add_column("المسار", style="yellow")
-    table.add_column("نظام الملفات", style="cyan")
-    table.add_column("المساحة الكلية", style="white")
-    table.add_column("المستغل (%)", style="red")
+def get_disk_usage():
+    table = Table(title="💾 Disk Partitions", show_header=True, header_style="bold blue")
+    table.add_column("Mountpoint", style="bold cyan")
+    table.add_column("Total", style="bold white", justify="center")
+    table.add_column("Used", style="bold yellow", justify="center")
+    table.add_column("Free", style="bold green", justify="center")
+    table.add_column("Usage %", style="bold magenta", justify="center")
 
     try:
-        partitions = psutil.disk_partitions()
-        for part in partitions:
+        for part in psutil.disk_partitions():
             try:
                 usage = psutil.disk_usage(part.mountpoint)
                 table.add_row(
                     part.mountpoint,
-                    part.fstype,
                     f"{usage.total // (1024**3)} GB",
+                    f"{usage.used // (1024**3)} GB",
+                    f"{usage.free // (1024**3)} GB",
                     f"{usage.percent}%"
                 )
-            except Exception:
+            except PermissionError:
                 continue
-    except Exception:
-        pass
-
-    # Backup attempt for root storage if partition enumeration is restricted
-    try:
-        usage = psutil.disk_usage('/')
-        table.add_row("/", "Internal", f"{usage.total // (1024**3)} GB", f"{usage.percent}%")
-    except Exception:
-        pass
-
-    console.print(table)
+        console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Error fetching disk details: {e}[/bold red]")
