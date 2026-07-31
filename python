@@ -1,0 +1,6 @@
+# في بداية main.py
+console = Console(record=True) # تفعيل خاصية التسجيل
+
+# في نهاية أي أمر، أو عند الخروج:
+console.save_html("report.html") # تحفظ كل ما تم طباعته كصفحة ويب منسقة ومضيئة!
+

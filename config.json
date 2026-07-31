@@ -1,0 +1,8 @@
+{
+  "app_name": "CyberOS Pro",
+  "version": "1.1",
+  "developer": "Shenouda Sameh",
+  "theme_color": "cyan",
+  "auto_save_reports": true,
+  "reports_dir": "reports"
+}

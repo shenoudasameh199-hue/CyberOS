@@ -1,0 +1,11 @@
+import logging
+
+logging.basicConfig(
+    filename="cyberos.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# داخل الأداة:
+logging.info("Port scan started on target: 192.168.1.1")
+
