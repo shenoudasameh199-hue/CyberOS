@@ -9,3 +9,7 @@ logging.basicConfig(
 # داخل الأداة:
 logging.info("Port scan started on target: 192.168.1.1")
 
+2026-07-31 15:17:54,391 - INFO - CyberOS Started
+2026-07-31 15:19:29,782 - INFO - CyberOS Started
+2026-07-31 15:21:59,702 - INFO - Saved HTML report: reports/report_20260731_152159.html
+2026-07-31 15:21:59,703 - INFO - CyberOS Exited Cleanly

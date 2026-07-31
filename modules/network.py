@@ -1,93 +1,67 @@
 import socket
-import concurrent.futures
-import requests
+from concurrent.futures import ThreadPoolExecutor
 from rich.console import Console
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn
+import requests
 
 console = Console()
 
-def ip_lookup(target: str) -> None:
-    console.print(f"\n[bold cyan]🌐 جاري جلب بيانات IP لـ: {target}[/bold cyan]")
+def ip_lookup(target):
     try:
-        res = requests.get(f"https://ipapi.co/{target}/json/", headers={"User-Agent": "CyberOS/1.0"}, timeout=5).json()
-        table = Table(title=f"بيانات IP: {target}", style="cyan")
-        table.add_column("الخاصية", style="magenta")
-        table.add_column("القيمة", style="white")
-
-        for k in ["ip", "city", "region", "country_name", "org", "asn", "timezone"]:
-            table.add_row(k.capitalize(), str(res.get(k, "N/A")))
-
-        console.print(table)
+        ip = socket.gethostbyname(target)
+        console.print(f"\n[bold green]✔ الهدف:[/bold green] {target}")
+        console.print(f"[bold cyan]📌 عنوان IP:[/bold cyan] {ip}")
     except Exception as e:
-        console.print(f"[bold red]حدث خطأ أثناء جلب البيانات: {e}[/bold red]")
+        console.print(f"[bold red]❌ فشل تحديد IP: {e}[/bold red]")
 
-def port_scan_worker(ip: str, port: int, timeout: float = 1.0) -> int | None:
+def check_port(target, port):
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(timeout)
-            if s.connect_ex((ip, port)) == 0:
-                return port
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1.0)
+        result = sock.connect_ex((target, port))
+        sock.close()
+        if result == 0:
+            return port
     except Exception:
         pass
     return None
 
-def port_scanner(target: str, start_port: int = 1, end_port: int = 100) -> None:
-    console.print(f"\n[bold cyan]🔍 فحص المنافذ لـ {target} (من {start_port} إلى {end_port})[/bold cyan]")
-    try:
-        target_ip = socket.gethostbyname(target)
-    except socket.gaierror:
-        console.print("[bold red]❌ فشل حل اسم المضيف DNS[/bold red]")
-        return
-
+def port_scanner(target, start_port=1, end_port=1024, max_threads=50):
+    console.print(f"\n[bold yellow]⚡ بدء الفحص السريع للمنافذ على {target} ({start_port}-{end_port}) باستخدام {max_threads} خيط...[/bold yellow]")
     open_ports = []
-    ports = range(start_port, end_port + 1)
-
-    with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
-        task = progress.add_task(description="جاري المسح...", total=len(ports))
-        with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
-            futures = {executor.submit(port_scan_worker, target_ip, p): p for p in ports}
-            for future in concurrent.futures.as_completed(futures):
-                res = future.result()
-                if res:
-                    open_ports.append(res)
-                progress.advance(task)
-
+    
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        futures = [executor.submit(check_port, target, port) for port in range(start_port, end_port + 1)]
+        for future in futures:
+            res = future.result()
+            if res:
+                open_ports.append(res)
+    
     if open_ports:
-        table = Table(title=f"المنافذ المفتوحة على {target}", style="green")
-        table.add_column("Port", style="yellow")
-        table.add_column("Status", style="bold green")
-        table.add_column("Service", style="cyan")
-        for p in sorted(open_ports):
-            try:
-                service = socket.getservbyport(p)
-            except Exception:
-                service = "Unknown"
-            table.add_row(str(p), "OPEN", service)
+        table = Table(title=f"المنافذ المفتوحة - {target}", show_header=True)
+        table.add_column("المنفذ (Port)", style="cyan", justify="center")
+        table.add_column("الحالة (Status)", style="green", justify="center")
+        for p in open_ports:
+            table.add_row(str(p), "Open")
         console.print(table)
     else:
-        console.print("[yellow]لم يتم العثور على أي منافذ مفتوحة في هذا النطاق.[/yellow]")
+        console.print("[bold red]لا توجد منافذ مفتوحة في النطاق المحدد.[/bold red]")
 
-def http_headers(url: str) -> None:
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
-    console.print(f"\n[bold cyan]🌐 جاري جلب HTTP Headers لـ: {url}[/bold cyan]")
+def http_headers(url):
+    if not url.startswith("http"):
+        url = "http://" + url
     try:
-        r = requests.get(url, timeout=5)
-        table = Table(title=f"HTTP Headers (Status: {r.status_code})", style="magenta")
-        table.add_column("Header", style="yellow")
-        table.add_column("Value", style="white")
-
-        for k, v in list(r.headers.items())[:15]:
+        res = requests.get(url, timeout=5)
+        table = Table(title=f"HTTP Headers - {url}", show_header=True)
+        table.add_column("Header", style="cyan")
+        table.add_column("Value", style="yellow")
+        for k, v in res.headers.items():
             table.add_row(k, v)
         console.print(table)
     except Exception as e:
-        console.print(f"[bold red]فشل الاتصال: {e}[/bold red]")
+        console.print(f"[bold red]❌ فشل جلب الترويسات: {e}[/bold red]")
 
-def ping_host(host: str) -> None:
-    console.print(f"\n[bold cyan]📡 جاري اختبار الاتصال (Ping) بـ {host}...[/bold cyan]")
-    try:
-        target_ip = socket.gethostbyname(host)
-        console.print(f"[bold green]✔ الهدف متصل وصحيح! IP: {target_ip}[/bold green]")
-    except socket.gaierror:
-        console.print(f"[bold red]❌ تتعذر الوصول إلى المضيف {host}[/bold red]")
+def ping_host(host):
+    import os
+    console.print(f"[bold yellow]📡 جاري اختبار الاتصال مع {host}...[/bold yellow]")
+    os.system(f"ping -c 4 {host}")
