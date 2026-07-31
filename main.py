@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import logging
 import zipfile
 from datetime import datetime
 
@@ -21,10 +22,18 @@ from modules.payloads import generate_payloads
 from modules.web_advanced import whois_dns_lookup, cms_tech_scanner, ssl_inspector
 from modules.forensics import extract_exif, hide_text_in_file, extract_text_from_file
 
+# إعداد السجلات Logging
+logging.basicConfig(
+    filename="cyberos.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
+
 def load_config():
     default_cfg = {
         "app_name": "CyberOS Ultimate",
-        "version": "2.5",
+        "version": "2.6",
         "developer": "Shenouda Sameh",
         "theme_color": "bright_blue",
         "auto_save_reports": True,
@@ -34,35 +43,83 @@ def load_config():
         try:
             with open("config.json", "r", encoding="utf-8") as f:
                 return {**default_cfg, **json.load(f)}
-        except Exception:
-            pass
+        except Exception as e:
+            logging.error(f"Error loading config: {e}")
     return default_cfg
 
 CONFIG = load_config()
 console = Console(record=True)
 
-def export_report() -> None:
+def export_report(fmt="html") -> None:
     rep_dir = CONFIG.get("reports_dir", "reports")
     os.makedirs(rep_dir, exist_ok=True)
-    filename = os.path.join(rep_dir, f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
-    try:
-        console.save_html(filename)
-        console.print(f"\n[bold green]📄 تم حفظ تقرير الجلسة بنجاح في: {filename}[/bold green]")
-    except Exception as e:
-        console.print(f"\n[bold red]فشل حفظ التقرير: {e}[/bold red]")
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    if fmt == "html":
+        filename = os.path.join(rep_dir, f"report_{timestamp}.html")
+        try:
+            console.save_html(filename)
+            console.print(f"\n[bold green]📄 تم حفظ تقرير HTML بنجاح في: {filename}[/bold green]")
+            logging.info(f"Saved HTML report: {filename}")
+        except Exception as e:
+            console.print(f"\n[bold red]فشل حفظ التقرير: {e}[/bold red]")
+            logging.error(f"Failed to save HTML report: {e}")
+            
+    elif fmt == "text":
+        filename = os.path.join(rep_dir, f"report_{timestamp}.txt")
+        try:
+            text_content = console.export_text()
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(text_content)
+            console.print(f"\n[bold green]📄 تم حفظ التقرير النصي بنجاح في: {filename}[/bold green]")
+            logging.info(f"Saved Text report: {filename}")
+        except Exception as e:
+            console.print(f"\n[bold red]فشل حفظ التقرير النصي: {e}[/bold red]")
+            logging.error(f"Failed to save Text report: {e}")
+
+def view_past_reports():
+    rep_dir = CONFIG.get("reports_dir", "reports")
+    if not os.path.exists(rep_dir) or not os.listdir(rep_dir):
+        console.print("[yellow]⚠️ لا توجد تقارير محفوظة حالياً.[/yellow]")
+        return
+
+    reports = sorted(os.listdir(rep_dir), reverse=True)
+    table = Table(title="📂 التقارير المحفوظة سابقةً", show_header=True, header_style="bold magenta")
+    table.add_column("الرقم", style="cyan", justify="center")
+    table.add_column("اسم الملف", style="bold green")
+    table.add_column("الحجم", style="bold yellow", justify="center")
+
+    for idx, rep in enumerate(reports, 1):
+        fp = os.path.join(rep_dir, rep)
+        size = f"{os.path.getsize(fp) / 1024:.1f} KB"
+        table.add_row(str(idx), rep, size)
+
+    console.print(table)
+    choice = Prompt.ask("\nاختر رقم الملف لعرضه (أو 0 للرجوع)", default="0")
+    if choice.isdigit() and 0 < int(choice) <= len(reports):
+        selected_file = os.path.join(rep_dir, reports[int(choice)-1])
+        console.clear()
+        console.print(f"[bold cyan]📑 قراءة الملف: {reports[int(choice)-1]}[/bold cyan]\n")
+        try:
+            with open(selected_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+                # عرض أجزاء من النص إذا كان كبيراً
+                console.print(content[:3000] + ("\n... [تم إيقاف العرض لكبر الحجم]" if len(content) > 3000 else ""))
+        except Exception as e:
+            console.print(f"[bold red]❌ فشل قراءة الملف: {e}[/bold red]")
 
 def display_header() -> None:
     theme = CONFIG.get("theme_color", "bright_blue")
     header_text = (
         f"[bold green]{CONFIG.get('app_name')} v{CONFIG.get('version')}[/bold green]\n"
-        "[bold green]منصة الأمن السيبراني وفحص الشبكات وتحليل البيانات الشاملة[/bold green]\n"
+        "[bold green]منصة الأمن السيبراني وفحص الشبكات الشاملة[/bold green]\n"
         f"[bold yellow]تطوير: {CONFIG.get('developer')}[/bold yellow]"
     )
     console.print(Panel(header_text, border_style=theme, expand=False))
 
 def display_menu() -> None:
     theme = CONFIG.get("theme_color", "bright_blue")
-    table = Table(title="[italic white]القائمة الرئيسية - CyberOS v2.5[/italic white]", show_header=True, header_style="bold magenta", border_style=theme)
+    table = Table(title="[italic white]القائمة الرئيسية - CyberOS v2.6[/italic white]", show_header=True, header_style="bold magenta", border_style=theme)
     table.add_column("الرقم", style="bold cyan", justify="center")
     table.add_column("الأدوات والخصائص", style="bold green", justify="right")
 
@@ -76,8 +133,9 @@ def display_menu() -> None:
     table.add_row("8", "⚡ مولد الحمولات والثغرات (Payload Generator)")
     table.add_row("9", "📁 إدارة الملفات والشجرة (File Manager)")
     table.add_row("10", "📱 صانع رموز الاستجابة السريعة (QR Code)")
-    table.add_row("11", "📝 الملاحظات والنسخ الاحتياطي والثيمات (Config & Backup)")
-    table.add_row("12", "📄 تصدير تقرير الجلسة (Export HTML)")
+    table.add_row("11", "📂 تصفح وإدارة التقارير السابقة (Reports Manager)")
+    table.add_row("12", "📝 الملاحظات والنسخ الاحتياطي والثيمات (Config & Backup)")
+    table.add_row("13", "📄 تصدير تقرير الجلسة (Export HTML / Text)")
     table.add_row("0", "خروج (Exit)")
 
     console.print(table)
@@ -150,12 +208,13 @@ def handle_backup() -> None:
         console.print(f"[bold red]خطأ أثناء النسخ الاحتياطي: {e}[/bold red]")
 
 def main() -> None:
+    logging.info("CyberOS Started")
     while True:
         console.clear()
         display_header()
         display_menu()
 
-        choice = Prompt.ask("\nاختر رقماً من القائمة", choices=[str(i) for i in range(13)])
+        choice = Prompt.ask("\nاختر رقماً من القائمة", choices=[str(i) for i in range(14)])
 
         if choice == "1":
             console.clear()
@@ -301,6 +360,11 @@ def main() -> None:
 
         elif choice == "11":
             console.clear()
+            view_past_reports()
+            Prompt.ask("\nاضغط Enter للمتابعة...")
+
+        elif choice == "12":
+            console.clear()
             console.print("[bold cyan]1. الملاحظات السريعة\n2. إدارة النسخ الاحتياطي\n3. تغيير ثيم ومظهر الأداة[/bold cyan]")
             sub = Prompt.ask("اختر خياراً", choices=["1", "2", "3"])
             if sub == "1": handle_notes()
@@ -308,14 +372,19 @@ def main() -> None:
             elif sub == "3": handle_settings()
             Prompt.ask("\nاضغط Enter للمتابعة...")
 
-        elif choice == "12":
-            export_report()
+        elif choice == "13":
+            console.clear()
+            console.print("[bold cyan]1. تصدير كـ HTML\n2. تصدير كـ Text[/bold cyan]")
+            sub = Prompt.ask("اختر النوع", choices=["1", "2"])
+            if sub == "1": export_report("html")
+            elif sub == "2": export_report("text")
             Prompt.ask("\nاضغط Enter للمتابعة...")
 
         elif choice == "0":
             if CONFIG.get("auto_save_reports", True):
-                export_report()
+                export_report("html")
             console.print("\n[bold red]إلى اللقاء![/bold red]")
+            logging.info("CyberOS Exited Cleanly")
             sys.exit(0)
 
 if __name__ == "__main__":
@@ -323,6 +392,6 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         if CONFIG.get("auto_save_reports", True):
-            export_report()
+            export_report("html")
         console.print("\n[bold red]تم الإنهاء بواسطة المستخدم. إلى اللقاء![/bold red]")
         sys.exit(0)
