@@ -34,10 +34,9 @@ logging.basicConfig(
 def load_config():
     default_cfg = {
         "app_name": "CyberOS Ultimate",
-        "version": "3.0",
+        "version": "3.5",
         "developer": "Shenouda Sameh",
-        "theme_color": "bright_blue",
-        "auto_save_reports": True,
+        "theme_color": "cyan",
         "reports_dir": "reports"
     }
     if os.path.exists("config.json"):
@@ -54,56 +53,54 @@ console = Console(record=True)
 def show_splash():
     console.clear()
     banner = r"""
-   ______ ____ ___  ____ _____ ____  ____  ____ 
-  / ___/ / / // _ \/ __// ___// __ \/ __/ / / / 
- / /__/ /_/ // ___/ _/ / /__ / /_/ /\ \  /_/ /  
- \___/\__,_//_/  /___/ \___/ \____/___/  (_) /   
-                                        /___/    
+   _____ ____  ______  ______ ____  ____  ____ 
+  / ___// __ \/ __  / / ____// __ \/ ___// / / 
+ / /__ / /_/ / /_/ / / /___ / /_/ /\__ \/_/ /  
+ \___/ \__, /\____/  \____/ \____/____/ (_) /   
+      /____/                             /___/   
     """
-    console.print(f"[bold cyan]{banner}[/bold cyan]")
-    console.print("[bold yellow]⚡ INITIALIZING CYBEROS CORE SYSTEM...[/bold yellow]\n")
-    for _ in track(range(10), description="[bold green]Loading Modules...[/bold green]"):
+    console.print(f"[bold bright_cyan]{banner}[/bold bright_cyan]")
+    console.print("[bold yellow]⚡ SYSTEM BOOT: CYBEROS CORE v3.5[/bold yellow]\n")
+    for _ in track(range(10), description="[bold green]Loading Cyber Modules...[/bold green]"):
         time.sleep(0.02)
     console.clear()
 
 def display_dashboard():
-    theme = CONFIG.get("theme_color", "bright_blue")
     try:
         load1, load5, load15 = os.getloadavg()
         cpu_str = f"{load1:.2f}"
     except Exception:
-        cpu_str = "N/A"
+        cpu_str = "ACTIVE"
 
     status_text = (
-        f"[bold green]SYSTEM:[/bold green] ONLINE  |  "
-        f"[bold cyan]LOAD AVG:[/bold cyan] {cpu_str}  |  "
-        f"[bold magenta]VER:[/bold magenta] v{CONFIG.get('version')}  |  "
-        f"[bold red]DEV:[/bold red] {CONFIG.get('developer')}"
+        f"[bold green]STATUS:[/bold green] ONLINE  │  "
+        f"[bold cyan]LOAD:[/bold cyan] {cpu_str}  │  "
+        f"[bold magenta]VERSION:[/bold magenta] v{CONFIG.get('version')}  │  "
+        f"[bold yellow]DEV:[/bold yellow] {CONFIG.get('developer')}"
     )
-    console.print(Panel(status_text, title="[bold white]🛡️ CyberOS Live Dashboard[/bold white]", border_style=theme, expand=True))
+    console.print(Panel(status_text, title="[bold white]🛡️ CYBEROS DASHBOARD[/bold white]", border_style="bright_blue", expand=True))
 
 def display_menu():
-    theme = CONFIG.get("theme_color", "bright_blue")
-    table = Table(show_header=True, header_style="bold magenta", border_style=theme, expand=True)
+    table = Table(show_header=True, header_style="bold bright_magenta", border_style="bright_blue", expand=True)
     
-    table.add_column("ID", style="bold cyan", justify="center", width=6)
-    table.add_column("الوحدة / Module", style="bold green")
-    table.add_column("الوصف / Description", style="dim white")
+    table.add_column("OPTION", style="bold bright_cyan", justify="center", width=8)
+    table.add_column("MODULE NAME", style="bold green", width=30)
+    table.add_column("DESCRIPTION", style="dim white")
 
-    table.add_row("1", "💻 معلومات واستكشاف النظام", "مراقبة المعالج، الذاكرة، والتخزين")
-    table.add_row("2", "🌐 أدوات الشبكة والمنافذ", "فحص IP، Port Scanner سريع، Ping")
-    table.add_row("3", "🔍 الاستكشاف المتقدم (Recon)", "جمع Subdomains والمسارات المخفية")
-    table.add_row("4", "🛰️ فحص المواقع (Web Intelligence)", "كشف التقنيات، DNS، شهادات SSL")
-    table.add_row("5", "🔐 الخزنة والتشفير (Cryptography)", "تشفير الملفات والتجزئة Hashes")
-    table.add_row("6", "🖼️ التحليل الجنائي (Forensics)", "استخراج EXIF والإخفاء داخل الملفات")
-    table.add_row("7", "🔑 إدارة وتحليل كلمات السر", "توليد كشوف معقدة واختبار القوة")
-    table.add_row("8", "⚡ مولد الحمولات (Payload Generator)", "إنشاء اتصال عكسي Reverse Shells")
-    table.add_row("9", "📁 إدارة الملفات والشجرة", "عرض واستكشاف المجلدات والأحجام")
-    table.add_row("10", "📱 رموز الاستجابة (QR Tools)", "توليد وحفظ رموز QR")
-    table.add_row("11", "📂 مركز التقارير (Reports Center)", "عرض وقراءة وتقييم التقارير")
-    table.add_row("12", "⚙️ الإعدادات والنسخ الاحتياطي", "تغيير الثيم، الملاحظات، والباك أب")
-    table.add_row("13", "📄 تصدير التقرير الحالي", "حفظ الجلسة كـ HTML / Text")
-    table.add_row("0", "❌ خروج (Exit)", "إنهاء الجلسة وحفظ البيانات")
+    table.add_row("01", "System Intelligence", "Monitor CPU, Memory, and Disk Usage")
+    table.add_row("02", "Network Scanner", "IP Lookup, Multi-Threaded Port Scanner, Ping")
+    table.add_row("03", "Reconnaissance", "Subdomain Enumeration & Directory Buster")
+    table.add_row("04", "Web Intelligence", "WHOIS, DNS Lookup, CMS & SSL Inspector")
+    table.add_row("05", "Cryptography Vault", "File Encryption/Decryption & Hashing")
+    table.add_row("06", "Digital Forensics", "EXIF Data Extraction & Steganography")
+    table.add_row("07", "Password Manager", "Strong Password Generator & Security Analyzer")
+    table.add_row("08", "Payload Generator", "Generate Reverse Shell Payloads")
+    table.add_row("09", "File Manager", "Directory Tree Viewer & Storage Search")
+    table.add_row("10", "QR Code Tools", "Generate & Save Custom Terminal QR Codes")
+    table.add_row("11", "Reports Center", "View, Manage & Analyze Generated Reports")
+    table.add_row("12", "System Settings", "Configure Themes & System Backups")
+    table.add_row("13", "Export Report", "Export Current Session Report to HTML")
+    table.add_row("00", "Exit System", "Safely Close CyberOS Session")
 
     console.print(table)
 
@@ -116,21 +113,21 @@ def export_report(fmt="html") -> None:
         filename = os.path.join(rep_dir, f"report_{timestamp}.html")
         try:
             console.save_html(filename)
-            console.print(f"\n[bold green]📄 تم حفظ التقرير بنجاح: {filename}[/bold green]")
+            console.print(f"\n[bold green]📄 Report saved successfully: {filename}[/bold green]")
         except Exception as e:
-            console.print(f"\n[bold red]فشل حفظ التقرير: {e}[/bold red]")
+            console.print(f"\n[bold red]Report Export Failed: {e}[/bold red]")
 
 def view_past_reports():
     rep_dir = CONFIG.get("reports_dir", "reports")
     if not os.path.exists(rep_dir) or not os.listdir(rep_dir):
-        console.print("[yellow]⚠️ لا توجد تقارير محفوظة حالياً.[/yellow]")
+        console.print("[yellow]⚠️ No saved reports found.[/yellow]")
         return
 
     reports = sorted(os.listdir(rep_dir), reverse=True)
-    table = Table(title="📂 التقارير المحفوظة سابقةً", show_header=True, header_style="bold magenta")
-    table.add_column("الرقم", style="cyan", justify="center")
-    table.add_column("اسم الملف", style="bold green")
-    table.add_column("الحجم", style="bold yellow", justify="center")
+    table = Table(title="📂 Saved Reports", show_header=True, header_style="bold magenta")
+    table.add_column("ID", style="cyan", justify="center")
+    table.add_column("Filename", style="bold green")
+    table.add_column("Size", style="bold yellow", justify="center")
 
     for idx, rep in enumerate(reports, 1):
         fp = os.path.join(rep_dir, rep)
@@ -138,17 +135,17 @@ def view_past_reports():
         table.add_row(str(idx), rep, size)
 
     console.print(table)
-    choice = Prompt.ask("\nاختر رقم الملف لعرضه (أو 0 للرجوع)", default="0")
+    choice = Prompt.ask("\nSelect Report ID to read (0 to back)", default="0")
     if choice.isdigit() and 0 < int(choice) <= len(reports):
         selected_file = os.path.join(rep_dir, reports[int(choice)-1])
         console.clear()
-        console.print(f"[bold cyan]📑 قراءة الملف: {reports[int(choice)-1]}[/bold cyan]\n")
+        console.print(f"[bold cyan]📑 File Content: {reports[int(choice)-1]}[/bold cyan]\n")
         try:
             with open(selected_file, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-                console.print(content[:3000] + ("\n... [تم إيقاف العرض لكبر الحجم]" if len(content) > 3000 else ""))
+                console.print(content[:3000] + ("\n... [Truncated due to file size]" if len(content) > 3000 else ""))
         except Exception as e:
-            console.print(f"[bold red]❌ فشل قراءة الملف: {e}[/bold red]")
+            console.print(f"[bold red]❌ Read error: {e}[/bold red]")
 
 def main():
     show_splash()
@@ -157,109 +154,109 @@ def main():
         display_dashboard()
         display_menu()
 
-        choice = Prompt.ask("\n[bold cyan]CyberOS[/bold cyan] > [bold yellow]اختر أمر من القائمة[/bold yellow]", choices=[str(i) for i in range(14)])
+        choice = Prompt.ask("\n[bold bright_cyan]CyberOS[/bold bright_cyan] ❯", default="01")
 
-        if choice == "1":
+        if choice in ["1", "01"]:
             console.clear()
             get_system_info()
             get_disk_usage()
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "2":
+        elif choice in ["2", "02"]:
             console.clear()
-            t = Prompt.ask("أدخل الهدف للفحص (مثال: example.com)")
+            t = Prompt.ask("Enter target host (e.g. example.com)")
             ip_lookup(t)
             port_scanner(t, 1, 100)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "3":
+        elif choice in ["3", "03"]:
             console.clear()
-            t = Prompt.ask("أدخل الهدف لاستكشاف النطاقات الفرعية (Domain)")
+            t = Prompt.ask("Enter target domain for Subdomains")
             subdomain_enum(t)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "4":
+        elif choice in ["4", "04"]:
             console.clear()
-            t = Prompt.ask("أدخل الرابط أو الدومين للتحليل (Web Intelligence)")
+            t = Prompt.ask("Enter URL/Domain for Web Intelligence")
             whois_dns_lookup(t)
             cms_tech_scanner(t)
             ssl_inspector(t)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "5":
+        elif choice in ["5", "05"]:
             console.clear()
-            sub = Prompt.ask("1. تجزئة نص (Hash String)\n2. تشفير ملف (Encrypt File)\nاختر أمر", choices=["1", "2"])
+            sub = Prompt.ask("1. Hash String\n2. Encrypt File\nSelect Option", choices=["1", "2"])
             if sub == "1":
-                txt = Prompt.ask("أدخل النص")
+                txt = Prompt.ask("Enter Text")
                 hash_string(txt)
             else:
-                fpath = Prompt.ask("أدخل مسار الملف")
-                key = Prompt.ask("أدخل مفتاح التشفير")
+                fpath = Prompt.ask("Enter File Path")
+                key = Prompt.ask("Enter Encryption Key")
                 encrypt_file(fpath, key)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "6":
+        elif choice in ["6", "06"]:
             console.clear()
-            sub = Prompt.ask("1. استخراج EXIF من صورة\n2. إخفاء نص في ملف\nاختر أمر", choices=["1", "2"])
+            sub = Prompt.ask("1. Extract Image EXIF\n2. Hide Text in File\nSelect Option", choices=["1", "2"])
             if sub == "1":
-                img = Prompt.ask("أدخل مسار الصورة")
+                img = Prompt.ask("Enter Image Path")
                 extract_exif(img)
             else:
-                fpath = Prompt.ask("أدخل مسار الملف")
-                txt = Prompt.ask("أدخل النص المخفي")
+                fpath = Prompt.ask("Enter File Path")
+                txt = Prompt.ask("Enter Hidden Text")
                 hide_text_in_file(fpath, txt)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "7":
+        elif choice in ["7", "07"]:
             console.clear()
-            sub = Prompt.ask("1. توليد كلمة سر معقدة\n2. اختبار قوة كلمة سر\nاختر أمر", choices=["1", "2"])
+            sub = Prompt.ask("1. Generate Password\n2. Analyze Strength\nSelect Option", choices=["1", "2"])
             if sub == "1":
-                length = int(Prompt.ask("أدخل طول كلمة السر", default="16"))
+                length = int(Prompt.ask("Enter Length", default="16"))
                 pwd = generate_password(length)
-                console.print(f"\n[bold green]🔑 كلمة السر المنشأة:[/bold green] [bold yellow]{pwd}[/bold yellow]")
+                console.print(f"\n[bold green]🔑 Password:[/bold green] [bold yellow]{pwd}[/bold yellow]")
             else:
-                pwd = Prompt.ask("أدخل كلمة السر للاختبار")
+                pwd = Prompt.ask("Enter Password to Test")
                 analyze_password(pwd)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "8":
+        elif choice in ["8", "08"]:
             console.clear()
-            ip = Prompt.ask("أدخل الـ LHOST (IP الخاص بك)")
-            port = Prompt.ask("أدخل الـ LPORT", default="4444")
+            ip = Prompt.ask("Enter LHOST (Your IP)")
+            port = Prompt.ask("Enter LPORT", default="4444")
             generate_payloads(ip, port)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "9":
+        elif choice in ["9", "09"]:
             console.clear()
-            path = Prompt.ask("أدخل المسار للعرص", default=".")
+            path = Prompt.ask("Enter Path", default=".")
             show_tree(path)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
         elif choice == "10":
             console.clear()
-            data = Prompt.ask("أدخل النص أو الرابط لتحويله لـ QR Code")
+            data = Prompt.ask("Enter Text/URL for QR Code")
             generate_terminal_qr(data)
-            if Prompt.ask("هل تريد حفظه كصورة؟ (y/n)", choices=["y", "n"]) == "y":
+            if Prompt.ask("Save as image? (y/n)", choices=["y", "n"]) == "y":
                 save_qr_image(data, "qrcode.png")
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
         elif choice == "11":
             console.clear()
             view_past_reports()
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
         elif choice == "12":
             console.clear()
-            console.print("[bold cyan]⚙️ الإعدادات الحالية:[/bold cyan]")
+            console.print("[bold cyan]⚙️ System Config:[/bold cyan]")
             console.print(CONFIG)
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
         elif choice == "13":
             export_report("html")
-            Prompt.ask("\nاضغط Enter للمتابعة...")
+            Prompt.ask("\nPress Enter to return...")
             
-        elif choice == "0":
-            console.print("\n[bold red]إلى اللقاء! تم إغلاق CyberOS بنجاح.[/bold red]")
+        elif choice in ["0", "00"]:
+            console.print("\n[bold red]Exiting CyberOS. Goodbye![/bold red]")
             sys.exit(0)
 
 if __name__ == "__main__":
